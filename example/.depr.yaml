@@ -1,0 +1,11 @@
+# note another comments
+- path: github.com/suapapa/hilog
+  hash: Hash
+  branch: master
+
+# note we can have comments
+#- path: Path
+#  hash: Hash
+#  branch: Branch
+
+
