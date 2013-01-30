@@ -29,3 +29,10 @@ Usage (yaml dependency file) that is placed in a single location::
     # source location, seperate package and branch
     - path:  github.com/mattbaird/elastigo
       src: github.com/araddon/elastigo 
+      branch: newsearch
+
+    # specific hash
+    - path:  github.com/mattbaird/elastigo
+      src: github.com/araddon/elastigo
+      hash:  d364f0fbe86
+      
