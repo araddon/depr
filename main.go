@@ -94,7 +94,6 @@ func (s *Git) CheckClean(d *Dep) (bool, error) {
 // Checkout appropriate branch if any
 func (s *Git) Checkout(d *Dep) (bool, error) {
 	var cmd *exec.Cmd
-	Debugf("checkout %s:%s", d.As, d.Src)
 	if len(d.As) > 0 {
 		// Check to see if we already have it?
 		_, err := os.Stat(d.AsPath())
@@ -113,15 +112,18 @@ func (s *Git) Checkout(d *Dep) (bool, error) {
 			Debug(out, err)
 		}
 		// GIT UPDATE!!!!
-		Logf(WARN, "git pull? %s", d.As)
+		Logf(WARN, "git pull? src:%s  as:%s", d.Src, d.As)
 		cmdgit := exec.Command("git", "pull")
 		cmdgit.Dir = d.AsPath()
 		out, err := cmdgit.Output()
-		Debug(string(out), err)
+		if err != nil {
+			Logf(ERROR, "ERROR on git pull?  %v    %s", err, out)
+			return false, err
+		}
 	}
 	//git checkout hash
 	if len(d.Hash) > 0 {
-		Debugf("git checkout %s    # %s", d.Hash, d.SrcPath())
+		Debugf("git checkout %s    # %s", d.Hash, d.AsPath())
 		cmd = exec.Command("git", "checkout", d.Hash)
 	} else if len(d.Branch) > 0 {
 		cmd = exec.Command("git", "checkout", d.Branch)
@@ -130,7 +132,7 @@ func (s *Git) Checkout(d *Dep) (bool, error) {
 		cmd = exec.Command("git", "pull")
 	}
 
-	cmd.Dir = d.SrcPath()
+	cmd.Dir = d.AsPath()
 	out, err := cmd.Output()
 	if err != nil {
 		Logf(ERROR, "out='%s'  err=%v  cmd=%v", out, err, cmd)
@@ -152,16 +154,13 @@ type Dep struct {
 
 func (d *Dep) setup() {
 	parts := strings.Split(d.Src, "#")
-	//Debugf("parts=%v len(parts)=%d   hashlen=%d", parts, len(parts), len(d.Hash))
 	if len(parts) > 1 && len(d.Hash) == 0 {
 		d.Hash = parts[1]
 		d.Src = parts[0]
-		Debugf("Setting hash to %s: %s", d.Src, d.Hash)
 	}
 	// now setup our source control provider
 	if strings.Contains(d.Src, "github.com") {
 		d.control = &Git{}
-		//Debugf("Setting src to github for %s : %v", d.Src, d.control)
 	}
 }
 
