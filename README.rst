@@ -10,24 +10,27 @@ While coordinating with others on same code base, across large projects it becam
 This is a command line tool that reads a yaml file that lists dependencies and ensures those exist.
 
 
+
 TODO
 
-* Allow src to be src you get from seperate from path
-* Allow another branch from master
-* allow a hash to be where you are frozen at
-* In case of conflict/working branch not clean?
+* x In case of conflict/working branch not clean?
+* x Allow src to be src you get from seperate from path
+* x Allow another branch from master
+* x allow a hash to be where you are frozen at
+* Allow un-clean "local" directories?
+
 
 Usage (yaml dependency file) that is placed in a single location::
     
     # simple, ensure package exists
-    - path: github.com/suapapa/hilog
+    - src: github.com/suapapa/hilog
 
     # Source location, seperate package location 
-    - path:  github.com/mattbaird/elastigo
+    - as:  github.com/mattbaird/elastigo
       src: github.com/araddon/elastigo 
 
     # source location, seperate package and branch
-    - path:  github.com/mattbaird/elastigo
+    - as:  github.com/mattbaird/elastigo
       src: github.com/araddon/elastigo 
       branch: newsearch
 
@@ -35,4 +38,6 @@ Usage (yaml dependency file) that is placed in a single location::
     - path:  github.com/mattbaird/elastigo
       src: github.com/araddon/elastigo
       hash:  d364f0fbe86
-      
+
+    # specific hash
+    - src:  github.com/mattbaird/elastigo#d364f0fbe86

@@ -1,10 +1,15 @@
 # note another comments
-- path: github.com/suapapa/hilog
-  hash: Hash
+- src: github.com/kr/pat
   branch: master
 
+- src: github.com/araddon/gou#ec9b02c2
+
+- src: github.com/araddon/elastigo
+  branch: newsearch
+  as: github.com/mattbaird/elastigo 
+
 # note we can have comments
-#- path: Path
+#- src: Path
 #  hash: Hash
 #  branch: Branch
 
