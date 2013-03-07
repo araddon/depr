@@ -47,9 +47,12 @@ type Dependencies []*Dep
 // before proceeding
 func (d *Dependencies) Run() {
 	d.init()
-	if !d.CheckClean() {
-		Log(ERROR, "THERE ARE UNCLEAN DIRS")
-		return
+	// generally we are going to force clean on all directories unless overridden
+	if !allowNonClean {
+		if !d.CheckClean() {
+			Log(ERROR, "THERE ARE UNCLEAN DIRS")
+			return
+		}
 	}
 	d.load()
 }
