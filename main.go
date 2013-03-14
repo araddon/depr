@@ -31,6 +31,7 @@ func main() {
 	SetLogger(log.New(os.Stderr, "", log.Ltime|log.Lshortfile), "debug")
 
 	yamlBytes, err := ioutil.ReadFile(config)
+	//Debug(string(yamlBytes))
 	quitIfErr(err)
 
 	var d Dependencies
@@ -88,9 +89,10 @@ func (s *Git) CheckClean(d *Dep) (bool, error) {
 	cmd.Dir = d.AsPath()
 	out, err := cmd.Output()
 	if len(out) == 0 && err == nil {
+		//Debugf("was clean: %s", d.AsPath())
 		return true, nil
 	}
-	Debug("GIT NOT CLEAN: ", d.AsPath())
+	Logf(WARN, "GIT NOT CLEAN: %s", d.AsPath())
 	return false, nil
 }
 
@@ -113,9 +115,23 @@ func (s *Git) Checkout(d *Dep) (bool, error) {
 			cmdgit.Dir = d.AsDir()
 			out, err := cmdgit.Output()
 			Debug(out, err)
+		} else {
+			// make sure we are not in detached state
+			Logf(WARN, "git checkout? src:%s  as:%s", d.Src, d.AsPath())
+			branch := "master"
+			if len(d.Branch) > 0 {
+				branch = d.Branch
+			}
+			cmdgit := exec.Command("git", "checkout", branch)
+			cmdgit.Dir = d.AsPath()
+			out, err := cmdgit.Output()
+			if err != nil {
+				Logf(ERROR, "ERROR on git checkout?  %v    %s", err, out)
+				return false, err
+			}
 		}
 		// GIT UPDATE!!!!
-		Logf(WARN, "git pull? src:%s  as:%s", d.Src, d.As)
+		Logf(WARN, "git pull? src:%s  as:%s", d.Src, d.AsPath())
 		cmdgit := exec.Command("git", "pull")
 		cmdgit.Dir = d.AsPath()
 		out, err := cmdgit.Output()
@@ -123,15 +139,19 @@ func (s *Git) Checkout(d *Dep) (bool, error) {
 			Logf(ERROR, "ERROR on git pull?  %v    %s", err, out)
 			return false, err
 		}
+		return true, nil
 	}
 	//git checkout hash
 	if len(d.Hash) > 0 {
 		Debugf("git checkout %s    # %s", d.Hash, d.AsPath())
+		Debugf("git checkout %s   # hash", d.Hash)
 		cmd = exec.Command("git", "checkout", d.Hash)
 	} else if len(d.Branch) > 0 {
+		Debugf("git checkout %s  as:%s", d.Branch, d.AsPath())
 		cmd = exec.Command("git", "checkout", d.Branch)
 	} else {
 		//??   git pull?
+		Debugf("Git pull? %s", d.AsPath())
 		cmd = exec.Command("git", "pull")
 	}
 
@@ -180,7 +200,8 @@ func (d *Dep) AsPath() string {
 	return fmt.Sprintf("%s/src/%s", gopath, d.Src)
 }
 
-// The local disk directory
+// The local disk directory, the path that will be used
+// for importing into go projects, may not be same as source path
 func (d *Dep) AsDir() string {
 	parts := strings.Split(d.As, "/")
 	if len(parts) < 2 {
@@ -192,18 +213,22 @@ func (d *Dep) AsDir() string {
 
 // Does this dependency need a checkout?   Ie, is not able to use *go get*
 func (d *Dep) NeedsCheckout() bool {
-	return (len(d.Branch) > 0 && d.Branch != "master") || len(d.Hash) > 0
+	return len(d.Branch) > 0 || len(d.Hash) > 0
 }
 
 // Check if this folder/path is clean to determine if there are changes
 // that are uncommited
 func (d *Dep) Clean() bool {
 	// if the directory doesn't exist it is clean
+	//Debugf("Check clean:  %s", d.AsPath())
 	fi, err := os.Stat(d.AsPath())
 	if err != nil && strings.Contains(err.Error(), "no such file or directory") {
 		return true
 	}
 	if fi != nil && fi.IsDir() {
+		if d.control == nil {
+			return true
+		}
 		if clean, err := d.control.CheckClean(d); clean && err == nil {
 			return true
 		}
@@ -215,14 +240,14 @@ func (d *Dep) Clean() bool {
 // Load the source for this dependency
 //  - Check to see if it uses "As" to alias source if so, doesn't use go get
 func (d *Dep) Load() bool {
-	if len(d.As) > 0 {
+	if len(d.As) > 0 || d.NeedsCheckout() {
 		if didCheckout, err := d.control.Checkout(d); didCheckout && err == nil {
 			return true
 		}
 	} else {
-		//Debugf("go getting:  %v", d)
-		_, err := exec.Command(goCmdPath, "get", d.Src).Output()
-		//Debugf("go get: '%s'   err=%v\n", out, err)
+		// use Go Get?  Should we specify?  How do we do a go get -u?
+		Debugf("go get -u '%s'", d.Src)
+		_, err := exec.Command(goCmdPath, "get", "-u", d.Src).Output()
 		quitIfErr(err)
 		if d.NeedsCheckout() {
 			Debugf("Needs checkout? %s hash=%s branch=%s", d.Src, d.Hash, d.Branch)
@@ -251,7 +276,7 @@ func (d Dependencies) CheckClean() bool {
 
 func quitIfErr(err error) {
 	if err != nil {
-		Log(ERROR, "Error: %v", err)
+		LogD(4, ERROR, "Error: ", err)
 		os.Exit(1)
 	}
 }

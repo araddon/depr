@@ -3,29 +3,20 @@ Go dependency resolution
 
 While coordinating with others on same code base, across large projects it became difficult to ensure that we had the same versions of packages due to
 
-* These versions could be forks of ones on github/launchpad (but retain same path) 
-* "frozen" at a known commit level/hash
-* different branches from default
+* These versions could be forks of ones on github/launchpad from different users, but retain same path on disk so go imports are the same.
+* "frozen" at a known version/hash
+* use different branches from master/default
 
 This is a command line tool that reads a yaml file that lists dependencies and ensures those exist.
 
 
-
-TODO
-
-* x In case of conflict/working branch not clean?
-* x Allow src to be src you get from seperate from path
-* x Allow another branch from master
-* x allow a hash to be where you are frozen at
-* Allow un-clean "local" directories?
-
-
-Usage (yaml dependency file) that is placed in a single location::
+Usage (yaml dependency file) that is placed in a single location, we use these inside our cmd's::
     
     # simple, ensure package exists
     - src: github.com/suapapa/hilog
 
-    # Source location, seperate package location 
+    # Use a repository that differs on disk vs github
+    # for usage when you have forked a repository
     - as:  github.com/mattbaird/elastigo
       src: github.com/araddon/elastigo 
 
@@ -34,10 +25,10 @@ Usage (yaml dependency file) that is placed in a single location::
       src: github.com/araddon/elastigo 
       branch: newsearch
 
-    # specific hash
-    - path:  github.com/mattbaird/elastigo
+    # specific version
+    - as:  github.com/mattbaird/elastigo
       src: github.com/araddon/elastigo
       hash:  d364f0fbe86
 
-    # specific hash
+    # specific version
     - src:  github.com/mattbaird/elastigo#d364f0fbe86
