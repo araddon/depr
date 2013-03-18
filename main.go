@@ -239,12 +239,23 @@ func (d *Dep) Clean() bool {
 
 // Load the source for this dependency
 //  - Check to see if it uses "As" to alias source if so, doesn't use go get
+//  - if we have a source control provider we will use that
 func (d *Dep) Load() bool {
 	if len(d.As) > 0 || d.NeedsCheckout() {
 		if didCheckout, err := d.control.Checkout(d); didCheckout && err == nil {
 			return true
 		}
 	} else {
+		// go get -u leaves git in detached head state
+		// so we can't get pull in future, so don't use it if we have a choice
+		if d.control != nil {
+			if didCheckout, err := d.control.Checkout(d); didCheckout && err == nil {
+				return true
+			} else {
+				Logf(ERROR, "%v", err)
+				return false
+			}
+		}
 		// use Go Get?  Should we specify?  How do we do a go get -u?
 		Debugf("go get -u '%s'", d.Src)
 		_, err := exec.Command(goCmdPath, "get", "-u", d.Src).Output()
