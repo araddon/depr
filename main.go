@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 )
 
 var (
@@ -63,12 +64,17 @@ func (d *Dependencies) init() {
 	}
 }
 func (d Dependencies) load() {
+	var wg sync.WaitGroup
 	for _, dep := range d {
-		if !dep.Load() {
-			Debugf("FAILED, not loaded  %v", dep)
-			return
-		}
+		wg.Add(1)
+		go func(depIn *Dep) {
+			if !depIn.Load() {
+				Logf(ERROR, "FAILED, not loaded  %v", depIn)
+			}
+			wg.Done()
+		}(dep)
 	}
+	wg.Wait()
 }
 
 // A sourcecontrol interface allow different implementations of git, hg, etc
@@ -277,11 +283,18 @@ func (d *Dep) Load() bool {
 // if so we are going to fail now
 func (d Dependencies) CheckClean() bool {
 	clean := true
+	var wg sync.WaitGroup
 	for _, dep := range d {
-		if !dep.Clean() {
-			clean = false
-		}
+		wg.Add(1)
+		go func(depIn *Dep) {
+			if !depIn.Clean() {
+				clean = false
+			}
+			wg.Done()
+		}(dep)
+
 	}
+	wg.Wait()
 	return clean
 }
 
