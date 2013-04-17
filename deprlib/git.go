@@ -71,18 +71,24 @@ func (s *Git) Checkout(d *Dep) (bool, error) {
 	}
 	//git checkout hash
 	if len(d.Hash) > 0 {
-		Debugf("git checkout %s    # %s", d.Hash, d.AsPath())
-		Debugf("git checkout %s   # hash", d.Hash)
+		Debugf("git checkout2 %s    # %s", d.Hash, d.AsPath())
 		cmd = exec.Command("git", "checkout", d.Hash)
 	} else if len(d.Branch) > 0 {
-		Debugf("git checkout %s  as:%s", d.Branch, d.AsPath())
+		Debugf("git checkout3 %s  as:%s", d.Branch, d.AsPath())
 		cmd = exec.Command("git", "checkout", d.Branch)
-	} else {
-		//??   git pull?
-		Debugf("Git pull? %s", d.AsPath())
-		cmd = exec.Command("git", "pull")
+	}
+	if cmd != nil {
+		cmd.Dir = d.AsPath()
+		out, err := cmd.Output()
+		if err != nil {
+			Logf(ERROR, "out='%s'  err=%v  cmd=%v", out, err, cmd)
+			return false, err
+		}
 	}
 
+	//now do a git pull since we have the checkout?
+	Debugf("Git pull? %s", d.AsPath())
+	cmd = exec.Command("git", "pull")
 	cmd.Dir = d.AsPath()
 	out, err := cmd.Output()
 	if err != nil {
