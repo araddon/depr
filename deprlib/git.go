@@ -58,16 +58,6 @@ func (s *Git) Checkout(d *Dep) (bool, error) {
 				return false, err
 			}
 		}
-		// GIT UPDATE!!!!
-		Logf(WARN, "git pull? src:%s  as:%s", d.Src, d.AsPath())
-		cmdgit := exec.Command("git", "pull")
-		cmdgit.Dir = d.AsPath()
-		out, err := cmdgit.Output()
-		if err != nil {
-			Logf(ERROR, "ERROR on git pull?  %v    %s", err, out)
-			return false, err
-		}
-		return true, nil
 	}
 	//git checkout hash
 	if len(d.Hash) > 0 {
@@ -87,14 +77,13 @@ func (s *Git) Checkout(d *Dep) (bool, error) {
 	}
 
 	//now do a git pull since we have the checkout?
-	Debugf("Git pull? %s", d.AsPath())
 	cmd = exec.Command("git", "pull")
 	cmd.Dir = d.AsPath()
 	out, err := cmd.Output()
 	if err != nil {
-		Logf(ERROR, "out='%s'  err=%v  cmd=%v", out, err, cmd)
+		Logf(ERROR, "GIT PULL ERR out='%s'  err=%v  cmd=%v", out, err, cmd)
 		return false, err
 	}
-
+	Debugf("Git pull? %s   %s", d.AsPath(), string(out))
 	return true, nil
 }
