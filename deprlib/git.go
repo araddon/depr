@@ -66,6 +66,9 @@ func (s *Git) Checkout(d *Dep) (bool, error) {
 	} else if len(d.Branch) > 0 {
 		Debugf("git checkout3 %s  as:%s", d.Branch, d.AsPath())
 		cmd = exec.Command("git", "checkout", d.Branch)
+	} else {
+		Debugf("git checkout4 master  as:%s", d.AsPath())
+		cmd = exec.Command("git", "checkout", "master")
 	}
 	if cmd != nil {
 		cmd.Dir = d.AsPath()

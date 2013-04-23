@@ -64,6 +64,7 @@ type SourceControl interface {
 // The dependency struct, provides the data for dependeny info
 // * Each Dep represents one package/dependency
 type Dep struct {
+	exists  bool   // does this path exist?
 	Src     string // The path to source:   github.com/araddon/gou, launchpad.net/goyaml, etc
 	As      string // the Path to emulate if getting from different Path
 	Hash    string // the hash to checkout to, if nil, not used
@@ -119,9 +120,11 @@ func (d *Dep) Clean() bool {
 	//Debugf("Check clean:  %s", d.AsPath())
 	fi, err := os.Stat(d.AsPath())
 	if err != nil && strings.Contains(err.Error(), "no such file or directory") {
+		d.exists = false
 		return true
 	}
 	if fi != nil && fi.IsDir() {
+		d.exists = true
 		if d.control == nil {
 			return true
 		}
@@ -144,7 +147,7 @@ func (d *Dep) Load() bool {
 	} else {
 		// go get -u leaves git in detached head state
 		// so we can't get pull in future, so don't use it if we have a choice
-		if d.control != nil {
+		if d.control != nil && d.exists {
 			if didCheckout, err := d.control.Checkout(d); didCheckout && err == nil {
 				return true
 			} else {
@@ -156,6 +159,15 @@ func (d *Dep) Load() bool {
 		Debugf("go get -u '%s'", d.Src)
 		_, err := exec.Command(GoCmdPath, "get", "-u", d.Src).Output()
 		quitIfErr(err)
+		if d.control != nil {
+			// Try to checkout master, to prevent detached head and non updating
+			if didCheckout, err := d.control.Checkout(d); didCheckout && err == nil {
+				return true
+			} else {
+				Logf(ERROR, "%v", err)
+				return false
+			}
+		}
 		if d.NeedsCheckout() {
 			Debugf("Needs checkout? %s hash=%s branch=%s", d.Src, d.Hash, d.Branch)
 			if didCheckout, err := d.control.Checkout(d); didCheckout && err == nil {
