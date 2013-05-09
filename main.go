@@ -18,7 +18,7 @@ var (
 
 func init() {
 	flag.StringVar(&config, "config", ".depr.yaml", "Yaml config file with dependencies to resolve")
-	flag.StringVar(&goCmdPath, "gopath", "/usr/bin/go", "Yaml config file with dependencies to resolve")
+	flag.StringVar(&goCmdPath, "gopath", "/usr/local/bin/go", "Path to go binary")
 	flag.BoolVar(&allowNonClean, "no-clean", false, "Allow dirty branches?  (uncommited changes)")
 }
 
