@@ -34,9 +34,9 @@ func main() {
 
 	var d deprlib.Dependencies
 	err = goyaml.Unmarshal(yamlBytes, &d)
-	quitIfErr(err)
 
-	d.Run(allowNonClean)
+	err = d.Run(allowNonClean)
+	quitIfErr(err)
 }
 
 func quitIfErr(err error) {

@@ -1,6 +1,7 @@
 package deprlib
 
 import (
+	"errors"
 	"fmt"
 	. "github.com/araddon/gou"
 	"os"
@@ -18,21 +19,21 @@ func init() {
 	GoPath = os.Getenv("GOPATH")
 }
 
-// List of dependencies describing the specific packages versions etc 
+// List of dependencies describing the specific packages versions etc
 type Dependencies []*Dep
 
 // Run the dependency resolution, first check cleanliness on all branches
 // before proceeding
-func (d *Dependencies) Run(allowNonClean bool) {
+func (d *Dependencies) Run(allowNonClean bool) error {
 	d.init()
 	// generally we are going to force clean on all directories unless overridden
 	if !allowNonClean {
 		if !d.CheckClean() {
-			Log(ERROR, "THERE ARE UNCLEAN DIRS")
-			return
+			return errors.New("THERE ARE UNCLEAN DIRS")
 		}
 	}
 	d.load()
+	return nil
 }
 func (d *Dependencies) init() {
 	for _, dep := range *d {
@@ -84,7 +85,7 @@ func (d *Dep) setup() {
 	}
 }
 
-// The source path 
+// The source path
 func (d *Dep) SrcPath() string {
 	return fmt.Sprintf("%s/src/%s", GoPath, d.Src)
 }
