@@ -6,7 +6,6 @@ import (
 	u "github.com/araddon/gou"
 	"io/ioutil"
 	"launchpad.net/goyaml"
-	"log"
 	"os"
 )
 
@@ -24,7 +23,8 @@ func init() {
 
 func main() {
 	flag.Parse()
-	u.SetLogger(log.New(os.Stderr, "", log.Ltime|log.Lshortfile), "debug")
+	u.SetupLogging("debug")
+	u.SetColorIfTerminal()
 
 	yamlBytes, err := ioutil.ReadFile(config)
 	//Debug(string(yamlBytes))
