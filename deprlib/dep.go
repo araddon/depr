@@ -208,7 +208,7 @@ func (d *Dep) Buildr() {
 	// new, initial clone?
 	u.Warnf("building %s", d.AsDir())
 	cmd := exec.Command("go", "clean")
-	cmd.Dir = d.AsDir()
+	cmd.Dir = d.AsPath()
 	out, err := cmd.Output()
 	cmd = exec.Command("go", "install")
 	out, err = cmd.Output()
