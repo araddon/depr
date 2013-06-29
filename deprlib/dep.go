@@ -5,7 +5,7 @@ import (
 	"fmt"
 	u "github.com/araddon/gou"
 	"os"
-	//"os/exec"
+	"os/exec"
 	"strings"
 	"sync"
 )
@@ -85,6 +85,9 @@ func (d Dependencies) load() {
 			if !depIn.Load() {
 				u.Errorf("FAILED, not loaded  %v", depIn)
 			}
+			if depIn.Build {
+				depIn.Buildr()
+			}
 			wg.Done()
 		}(dep)
 	}
@@ -109,6 +112,7 @@ type Dep struct {
 	As      string // the Path to emulate if getting from different Path
 	Hash    string // the hash to checkout to, if nil, not used
 	Branch  string // the branch to checkout if not supplied, uses default
+	Build   bool   // should we build it?
 	control SourceControl
 }
 
@@ -198,6 +202,19 @@ func (d *Dep) Load() bool {
 	}
 
 	return true
+}
+
+func (d *Dep) Buildr() {
+	// new, initial clone?
+	u.Warnf("building %s", d.AsDir())
+	cmd := exec.Command("go", "clean")
+	cmd.Dir = d.AsDir()
+	out, err := cmd.Output()
+	cmd = exec.Command("go", "install")
+	out, err = cmd.Output()
+	if err != nil {
+		u.Error(string(out), err)
+	}
 }
 
 func quitIfErr(err error) {
