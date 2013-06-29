@@ -1,92 +1,89 @@
 package deprlib
 
 import (
-	. "github.com/araddon/gou"
-	"os"
+	"fmt"
+	u "github.com/araddon/gou"
 	"os/exec"
-	"strings"
 )
 
 // Implementation of the git interface for managing checkouts
 type Git struct{}
 
-// Check to see if this dependency is clean or not 
-func (s *Git) CheckClean(d *Dep) (bool, error) {
+// Check to see if this dependency is clean or not
+func (s *Git) CheckClean(d *Dep) error {
 	//git diff --exit-code
 	cmd := exec.Command("git", "diff", "--exit-code")
 	cmd.Dir = d.AsPath()
 	out, err := cmd.Output()
 	if len(out) == 0 && err == nil {
-		//Debugf("was clean: %s", d.AsPath())
-		return true, nil
+		return nil
 	}
-	Logf(WARN, "GIT NOT CLEAN: %s", d.AsPath())
-	return false, nil
+	return fmt.Errorf("GIT NOT CLEAN: %s", d.AsPath())
 }
 
-// Checkout appropriate branch if any
-func (s *Git) Checkout(d *Dep) (bool, error) {
-	var cmd *exec.Cmd
-	if len(d.As) > 0 {
-		// Check to see if we already have it?
-		_, err := os.Stat(d.AsPath())
-		if err != nil && strings.Contains(err.Error(), "no such file or directory") {
-			//TODO:  os.Mkdir(name, perm)
-			Logf(WARN, "Creating dir? %s", d.AsDir())
-			cmdDir := exec.Command("mkdir", "-p", d.AsDir())
-			cmdDir.Dir = GoPath
-			cmdDir.Output()
+// Initial Creation of this repo
+func (s *Git) Clone(d *Dep) error {
+	if !d.exists {
+		// new, initial clone?
+		u.Warnf("cloning src? %s", d.AsDir())
+		cmdgit := exec.Command("git", "clone", d.As)
+		cmdgit.Dir = d.AsDir()
+		out, err := cmdgit.Output()
+		u.Debug(out, err)
+		return err
+	}
+	return nil
+}
 
-			// Clone 
-			Logf(WARN, "cloning src? %s", d.AsDir())
-			cmdgit := exec.Command("git", "clone", d.As)
-			cmdgit.Dir = d.AsDir()
-			out, err := cmdgit.Output()
-			Debug(out, err)
-		} else {
-			// make sure we are not in detached state
-			Logf(WARN, "git checkout? src:%s  as:%s", d.Src, d.AsPath())
-			branch := "master"
-			if len(d.Branch) > 0 {
-				branch = d.Branch
-			}
-			cmdgit := exec.Command("git", "checkout", branch)
-			cmdgit.Dir = d.AsPath()
-			out, err := cmdgit.Output()
-			if err != nil {
-				Logf(ERROR, "ERROR on git checkout?  %v    %s", err, out)
-				return false, err
-			}
-		}
-	}
-	//git checkout hash
-	if len(d.Hash) > 0 {
-		Debugf("git checkout2 %s    # %s", d.Hash, d.AsPath())
-		cmd = exec.Command("git", "checkout", d.Hash)
-	} else if len(d.Branch) > 0 {
-		Debugf("git checkout3 %s  as:%s", d.Branch, d.AsPath())
-		cmd = exec.Command("git", "checkout", d.Branch)
-	} else {
-		Debugf("git checkout4 master  as:%s", d.AsPath())
+// Initial Pull
+func (s *Git) Pull(d *Dep) error {
+	var cmd *exec.Cmd
+	if len(d.Hash) > 0 && d.exists {
+		// we are in detached head mode at the moment most likely, get onto a branch
 		cmd = exec.Command("git", "checkout", "master")
-	}
-	if cmd != nil {
 		cmd.Dir = d.AsPath()
 		out, err := cmd.Output()
 		if err != nil {
-			Logf(ERROR, "out='%s'  err=%v  cmd=%v", out, err, cmd)
-			return false, err
+			u.Errorf("GIT PULL ERR out='%s'  err=%v  cmd=%v", out, err)
+			return err
 		}
+		u.Debugf("hash checkout master (%v) path:%s  out='%s'", cmd.Args, d.AsPath(), string(out))
 	}
-
-	//now do a git pull since we have the checkout?
+	//now do a git pull after ensuring we are on a branch?
 	cmd = exec.Command("git", "pull")
 	cmd.Dir = d.AsPath()
 	out, err := cmd.Output()
 	if err != nil {
-		Logf(ERROR, "GIT PULL ERR out='%s'  err=%v  cmd=%v", out, err, cmd)
-		return false, err
+		u.Errorf("GIT PULL ERR out='%s'  err=%v  cmd=%v", out, err, cmd)
+		return err
 	}
-	Debugf("Git pull? %s   %s", d.AsPath(), string(out))
-	return true, nil
+	u.Debugf("Git pull? %s   %s", d.AsPath(), string(out))
+	return nil
+
+}
+
+// Checkout appropriate branch if any
+func (s *Git) Checkout(d *Dep) error {
+	var cmd *exec.Cmd
+
+	//git checkout hash
+	if len(d.Hash) > 0 {
+		cmd = exec.Command("git", "checkout", d.Hash)
+		u.Debugf("hash checkout (%v) path:%s", cmd.Args, d.AsPath())
+	} else if len(d.Branch) > 0 {
+		u.Debugf("git checkout3 %s  as:%s", d.Branch, d.AsPath())
+		cmd = exec.Command("git", "checkout", d.Branch)
+	} else {
+		u.Debugf("git checkout4 master  as:%s", d.AsPath())
+		cmd = exec.Command("git", "checkout", "master")
+	}
+
+	cmd.Dir = d.AsPath()
+	out, err := cmd.Output()
+	if err != nil {
+		u.Errorf("out='%s'  err=%v  cmd=%v", out, err, cmd)
+		return err
+	}
+
+	return nil
 }

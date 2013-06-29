@@ -3,9 +3,9 @@ package deprlib
 import (
 	"errors"
 	"fmt"
-	. "github.com/araddon/gou"
+	u "github.com/araddon/gou"
 	"os"
-	"os/exec"
+	//"os/exec"
 	"strings"
 	"sync"
 )
@@ -26,11 +26,8 @@ type Dependencies []*Dep
 // before proceeding
 func (d *Dependencies) Run(allowNonClean bool) error {
 	d.init()
-	// generally we are going to force clean on all directories unless overridden
-	if !allowNonClean {
-		if !d.CheckClean() {
-			return errors.New("THERE ARE UNCLEAN DIRS")
-		}
+	if d.checkClean(allowNonClean) {
+		return errors.New("Unclean Directories")
 	}
 	d.load()
 	return nil
@@ -40,13 +37,53 @@ func (d *Dependencies) init() {
 		dep.setup()
 	}
 }
+func (d Dependencies) checkClean(allowNonClean bool) bool {
+	var wg sync.WaitGroup
+	hasErrors := false
+	for _, dep := range d {
+		wg.Add(1)
+		go func(depIn *Dep) {
+			depIn.createPath()
+			// generally we are going to force clean on all directories unless overridden
+			if !allowNonClean {
+				if !depIn.Clean() {
+					u.Debug(depIn)
+					hasErrors = true
+				}
+			}
+			wg.Done()
+		}(dep)
+	}
+	wg.Wait()
+	return hasErrors
+}
+
+// Check all the dependencies and make sure they are clean, no uncommited changes
+// if so we are going to fail now
+func (d Dependencies) XXXCheckClean() bool {
+	clean := true
+	var wg sync.WaitGroup
+	for _, dep := range d {
+		wg.Add(1)
+		go func(depIn *Dep) {
+			if !depIn.Clean() {
+				clean = false
+			}
+			wg.Done()
+		}(dep)
+
+	}
+	wg.Wait()
+	return clean
+}
+
 func (d Dependencies) load() {
 	var wg sync.WaitGroup
 	for _, dep := range d {
 		wg.Add(1)
 		go func(depIn *Dep) {
 			if !depIn.Load() {
-				Logf(ERROR, "FAILED, not loaded  %v", depIn)
+				u.Errorf("FAILED, not loaded  %v", depIn)
 			}
 			wg.Done()
 		}(dep)
@@ -58,8 +95,10 @@ func (d Dependencies) load() {
 type SourceControl interface {
 	// Check if this folder/path is clean to determine if there are changes
 	// that are uncommited
-	CheckClean(*Dep) (bool, error)
-	Checkout(*Dep) (bool, error)
+	CheckClean(*Dep) error
+	Checkout(*Dep) error
+	Clone(*Dep) error
+	Pull(*Dep) error
 }
 
 // The dependency struct, provides the data for dependeny info
@@ -82,6 +121,8 @@ func (d *Dep) setup() {
 	// now setup our source control provider
 	if strings.Contains(d.Src, "github.com") {
 		d.control = &Git{}
+	} else {
+		d.control = &GoGet{}
 	}
 }
 
@@ -103,7 +144,7 @@ func (d *Dep) AsPath() string {
 func (d *Dep) AsDir() string {
 	parts := strings.Split(d.As, "/")
 	if len(parts) < 2 {
-		Logf(ERROR, "Missing as?   %s", d.As)
+		u.Errorf("Missing as?   %s", d.As)
 		return ""
 	}
 	return strings.Replace(d.As, "/"+parts[len(parts)-1], "", -1)
@@ -114,96 +155,54 @@ func (d *Dep) NeedsCheckout() bool {
 	return len(d.Branch) > 0 || len(d.Hash) > 0
 }
 
-// Check if this folder/path is clean to determine if there are changes
-// that are uncommited
-func (d *Dep) Clean() bool {
-	// if the directory doesn't exist it is clean
-	//Debugf("Check clean:  %s", d.AsPath())
+// ensure this path exists
+func (d *Dep) createPath() error {
 	fi, err := os.Stat(d.AsPath())
 	if err != nil && strings.Contains(err.Error(), "no such file or directory") {
 		d.exists = false
-		return true
+		u.Debugf("Creating dir %s", d.AsPath())
+		if err := os.MkdirAll(d.AsPath(), os.ModeDir|0700); err != nil {
+			u.Error(err)
+			return err
+		}
+		return nil
 	}
 	if fi != nil && fi.IsDir() {
 		d.exists = true
-		if d.control == nil {
-			return true
-		}
-		if clean, err := d.control.CheckClean(d); clean && err == nil {
-			return true
-		}
 	}
 
-	return false
+	return nil
+}
+
+// Check if this folder/path is clean to determine if there are changes
+// that are uncommited
+func (d *Dep) Clean() bool {
+	if err := d.control.CheckClean(d); err != nil {
+		u.Error(err)
+		return false
+	}
+	return true
 }
 
 // Load the source for this dependency
 //  - Check to see if it uses "As" to alias source if so, doesn't use go get
 //  - if we have a source control provider we will use that
 func (d *Dep) Load() bool {
-	if len(d.As) > 0 || d.NeedsCheckout() {
-		if didCheckout, err := d.control.Checkout(d); didCheckout && err == nil {
-			return true
-		}
-	} else {
-		// go get -u leaves git in detached head state
-		// so we can't get pull in future, so don't use it if we have a choice
-		if d.control != nil && d.exists {
-			if didCheckout, err := d.control.Checkout(d); didCheckout && err == nil {
-				return true
-			} else {
-				Logf(ERROR, "%v", err)
-				return false
-			}
-		}
-		// use Go Get?  Should we specify?  How do we do a go get -u?
-		Debugf("go get -u '%s'", d.Src)
-		_, err := exec.Command(GoCmdPath, "get", "-u", d.Src).Output()
-		quitIfErr(err)
-		if d.control != nil {
-			// Try to checkout master, to prevent detached head and non updating
-			if didCheckout, err := d.control.Checkout(d); didCheckout && err == nil {
-				return true
-			} else {
-				Logf(ERROR, "%v", err)
-				return false
-			}
-		}
-		if d.NeedsCheckout() {
-			Debugf("Needs checkout? %s hash=%s branch=%s", d.Src, d.Hash, d.Branch)
-			if didCheckout, err := d.control.Checkout(d); didCheckout && err == nil {
-				return true
-			}
-		} else {
-			return true
-		}
+	if err := d.control.Pull(d); err != nil {
+		u.Errorf("FAILED, not loaded  %v", err)
+		return false
 	}
 
-	return false
-}
-
-// Check all the dependencies and make sure they are clean, no uncommited changes
-// if so we are going to fail now
-func (d Dependencies) CheckClean() bool {
-	clean := true
-	var wg sync.WaitGroup
-	for _, dep := range d {
-		wg.Add(1)
-		go func(depIn *Dep) {
-			if !depIn.Clean() {
-				clean = false
-			}
-			wg.Done()
-		}(dep)
-
+	if err := d.control.Checkout(d); err != nil {
+		return false
 	}
-	wg.Wait()
-	return clean
+
+	return true
 }
 
 func quitIfErr(err error) {
 	if err != nil {
-		LogD(4, ERROR, "Error: ", err)
+		u.LogD(4, u.ERROR, "Error: ", err)
 		os.Exit(1)
 	}
 }
