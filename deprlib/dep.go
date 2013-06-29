@@ -206,11 +206,11 @@ func (d *Dep) Load() bool {
 
 func (d *Dep) Buildr() {
 	// new, initial clone?
-	u.Warnf("building %s", d.AsDir())
-	cmd := exec.Command("go", "clean")
+	u.Warnf("building %s", d.AsPath())
+	cmd := exec.Command(GoCmdPath, "clean")
 	cmd.Dir = d.AsPath()
 	out, err := cmd.Output()
-	cmd = exec.Command("go", "install")
+	cmd = exec.Command(GoCmdPath, "install")
 	out, err = cmd.Output()
 	if err != nil {
 		u.Error(string(out), err)
