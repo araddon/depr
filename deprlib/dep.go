@@ -19,6 +19,13 @@ func init() {
 	GoPath = os.Getenv("GOPATH")
 }
 
+func chompnl(line []byte) string {
+	if len(line) > 0 && line[len(line)-1] == '\n' {
+		return string(line[:len(line)-1])
+	}
+	return string(line)
+}
+
 // List of dependencies describing the specific packages versions etc
 type Dependencies []*Dep
 

@@ -62,7 +62,7 @@ func (s *Git) Pull(d *Dep) error {
 		u.Errorf("GIT PULL ERR out='%s'  err=%v  cmd=%v", out, err, cmd)
 		return err
 	}
-	u.Debugf("Git pull? %s   %s", d.AsPath(), string(out))
+	u.Debugf("Git pull? %s   %s", d.AsPath(), chompnl(out))
 	return nil
 
 }
