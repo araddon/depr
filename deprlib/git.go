@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	BRANCHES = "master,develop"
+	BRANCHES = "master,develop,gh-pages"
 )
 
 // Implementation of the git interface for managing checkouts
@@ -52,7 +52,7 @@ func (s *Git) Pull(d *Dep) error {
 			u.Errorf("GIT PULL ERR out='%s'  err=%v  cmd=%v", out, err)
 			return err
 		}
-		u.Debugf("hash checkout master (%v) path:%s  out='%s'", cmd.Args, d.AsPath(), string(out))
+		u.Debugf("hash checkout master (hash=%v) path:%s  out='%s'", d.Hash, d.AsPath(), string(out))
 	}
 	//now do a git pull after ensuring we are on a branch?
 	cmd = exec.Command("git", "pull")
