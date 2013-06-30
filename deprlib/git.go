@@ -4,6 +4,11 @@ import (
 	"fmt"
 	u "github.com/araddon/gou"
 	"os/exec"
+	"strings"
+)
+
+var (
+	BRANCHES = "master,develop"
 )
 
 // Implementation of the git interface for managing checkouts
@@ -38,7 +43,7 @@ func (s *Git) Clone(d *Dep) error {
 // Initial Pull
 func (s *Git) Pull(d *Dep) error {
 	var cmd *exec.Cmd
-	if len(d.Hash) > 0 && d.exists {
+	if len(d.Hash) > 0 && d.exists && !strings.Contains(BRANCHES, d.Hash) {
 		// we are in detached head mode at the moment most likely, get onto a branch
 		cmd = exec.Command("git", "checkout", "master")
 		cmd.Dir = d.AsPath()
