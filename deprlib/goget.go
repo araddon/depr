@@ -19,7 +19,14 @@ func (s *GoGet) Clone(d *Dep) error {
 	if !d.exists {
 		// use Go Get?  Should we specify?  How do we do a go get -u?
 		u.Debugf("go get -u '%s'", d.Src)
-		_, err := exec.Command(GoCmdPath, "get", "-u", d.Src).Output()
+		out, err := exec.Command(GoCmdPath, "get", "-u", d.Src).Output()
+		if err != nil {
+			if strings.Contains(string(out), "no Go source files") {
+				return nil
+			} else if len(out) == 0 {
+				return nil
+			}
+		}
 		return err
 	}
 	return nil
