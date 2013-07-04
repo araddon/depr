@@ -2,8 +2,8 @@ package deprlib
 
 import (
 	u "github.com/araddon/gou"
-	//"os"
 	"os/exec"
+	"strings"
 )
 
 // Implementation of using Go Get, for non github
@@ -28,7 +28,13 @@ func (s *GoGet) Clone(d *Dep) error {
 // Initial Pull
 func (s *GoGet) Pull(d *Dep) error {
 	u.Debugf("go get -u '%s'", d.Src)
-	_, err := exec.Command(GoCmdPath, "get", "-u", d.Src).Output()
+	out, err := exec.Command(GoCmdPath, "get", "-u", d.Src).Output()
+	//no Go source files in /home/ubuntu/Dropbox/go/root/src/code.google.com/p/goprotobuf
+	if err != nil {
+		if strings.Contains(string(out), "no Go source files") {
+			return nil
+		}
+	}
 	return err
 }
 
