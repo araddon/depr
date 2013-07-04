@@ -21,6 +21,7 @@ func (s *GoGet) Clone(d *Dep) error {
 		u.Debugf("go get -u '%s'", d.Src)
 		out, err := exec.Command(GoCmdPath, "get", "-u", d.Src).Output()
 		if err != nil {
+			u.Debugf("go get -u '%s' OUT='%s'", d.Src, string(out))
 			if strings.Contains(string(out), "no Go source files") {
 				return nil
 			} else if len(out) == 0 {
