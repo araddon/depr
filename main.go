@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"launchpad.net/goyaml"
 	"os"
+	"runtime"
 )
 
 var (
@@ -29,7 +30,8 @@ func main() {
 	yamlBytes, err := ioutil.ReadFile(config)
 	//Debug(string(yamlBytes))
 	quitIfErr(err)
-
+	goroot := runtime.GOROOT()
+	goCmdPath = goroot + "/bin/go"
 	deprlib.GoCmdPath = goCmdPath
 
 	var d deprlib.Dependencies
