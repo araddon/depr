@@ -44,6 +44,17 @@ func (s *Git) Clone(d *Dep) error {
 // Initial Pull
 func (s *Git) Pull(d *Dep) error {
 	var cmd *exec.Cmd
+	if !d.exists {
+		// we need to do git clone here to force auth?  
+		// cmd = exec.Command("git", "clone", "master")
+		// cmd.Dir = d.AsPath()
+		// out, err := cmd.Output()
+		// if err != nil {
+		// 	u.Errorf("GIT PULL ERR out='%s'  err=%v  cmd=%v", out, err)
+		// 	return err
+		// }
+		// u.Debugf("hash checkout master (hash=%v) path:%s  out='%s'", d.Hash, d.AsPath(), string(out))
+	}
 	if len(d.Hash) > 0 && d.exists && !strings.Contains(BRANCHES, d.Hash) {
 		// we are in detached head mode at the moment most likely, get onto a branch
 		cmd = exec.Command("git", "checkout", "master")
