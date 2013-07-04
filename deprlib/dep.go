@@ -171,12 +171,19 @@ func (d *Dep) createPath() error {
 	fi, err := os.Stat(d.AsPath())
 	if err != nil && strings.Contains(err.Error(), "no such file or directory") {
 		d.exists = false
-		u.Debugf("Creating dir %s", d.AsPath())
-		if err := os.MkdirAll(d.AsPath(), os.ModeDir|0700); err != nil {
-			u.Error(err)
+		// u.Debugf("Creating dir %s", d.AsPath())
+		// if err := os.MkdirAll(d.AsPath(), os.ModeDir|0700); err != nil {
+		// 	u.Error(err)
+		// 	return err
+		// }
+		// return nil
+		// use Go Get?  Should we specify?  How do we do a go get -u?
+		
+		out, err := exec.Command(GoCmdPath, "get", "-u", d.Src).Output()
+		if err != nil {
 			return err
 		}
-		return nil
+		u.Debugf("go get -u '%s'  out=%s", d.Src, string(out))
 	}
 	if fi != nil && fi.IsDir() {
 		d.exists = true
