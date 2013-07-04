@@ -33,6 +33,8 @@ func (s *GoGet) Pull(d *Dep) error {
 	if err != nil {
 		if strings.Contains(string(out), "no Go source files") {
 			return nil
+		} else if len(out) == 0 {
+			return nil
 		}
 	}
 	return err
