@@ -17,9 +17,9 @@ func (s *GoGet) CheckClean(d *Dep) error {
 // Initial Creation of this repo
 func (s *GoGet) Clone(d *Dep) error {
 	if !d.exists {
-		// use Go Get?  Should we specify?  How do we do a go get -u?
-		u.Debugf("%s get -u '%s'", GoCmdPath, d.Src)
-		out, err := exec.Command(GoCmdPath, "get", "-u", d.Src).Output()
+		// use Go Get?  Should we specify?  do NOT use -u
+		u.Debugf("%s get '%s'", GoCmdPath, d.Src)
+		out, err := exec.Command(GoCmdPath, "get", d.Src).Output()
 		if err != nil {
 			u.Debugf("%s get -u '%s' OUT='%s'", GoCmdPath, d.Src, string(out))
 			if strings.Contains(string(out), "no Go source files") {
