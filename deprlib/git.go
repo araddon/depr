@@ -80,7 +80,7 @@ func (s *Git) Pull(d *Dep) error {
 	cmd = exec.Command("git", "pull")
 	cmd.Dir = d.AsPath()
 	out, err := cmd.Output()
-	if err != nil {
+	if err != nil && len(out) > 0 {
 		u.Errorf("GIT PULL ERR out='%s' %s err=%v  cmd=%v", out, d.AsPath(), err, cmd)
 		return err
 	}
