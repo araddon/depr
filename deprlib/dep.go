@@ -66,25 +66,6 @@ func (d Dependencies) checkClean(allowNonClean bool) bool {
 	return hasErrors
 }
 
-// Check all the dependencies and make sure they are clean, no uncommited changes
-// if so we are going to fail now
-func (d Dependencies) XXXCheckClean() bool {
-	clean := true
-	var wg sync.WaitGroup
-	for _, dep := range d {
-		wg.Add(1)
-		go func(depIn *Dep) {
-			if !depIn.Clean() {
-				clean = false
-			}
-			wg.Done()
-		}(dep)
-
-	}
-	wg.Wait()
-	return clean
-}
-
 func (d Dependencies) load() {
 	var wg sync.WaitGroup
 	for _, dep := range d {
@@ -228,7 +209,6 @@ func (d *Dep) Load() bool {
 }
 
 func (d *Dep) Buildr() {
-	// new, initial clone?
 	u.Warnf("building %s", d.AsPath())
 	cmd := exec.Command(GoCmdPath, "clean")
 	cmd.Dir = d.AsPath()

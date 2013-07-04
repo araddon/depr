@@ -19,9 +19,11 @@ func (s *GoGet) Clone(d *Dep) error {
 	if !d.exists {
 		// use Go Get?  Should we specify?  do NOT use -u
 		u.Debugf("%s get '%s'", GoCmdPath, d.Src)
-		out, err := exec.Command(GoCmdPath, "get", d.Src).Output()
+		cmd := exec.Command(GoCmdPath, "get", d.Src)
+		cmd.Dir = GoPath
+		out, err := cmd.Output()
 		if err != nil {
-			u.Debugf("%s get -u '%s' OUT='%s'", GoCmdPath, d.Src, string(out))
+			u.Debugf("%s get'%s' OUT='%s'", GoCmdPath, d.Src, string(out))
 			if strings.Contains(string(out), "no Go source files") {
 				return nil
 			} else if len(out) == 0 {
