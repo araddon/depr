@@ -169,7 +169,7 @@ func (d *Dep) createPath() error {
 	if err != nil && strings.Contains(err.Error(), "no such file or directory") {
 		d.exists = false
 		u.Debugf("Creating dir %s", d.ParentDir())
-		if err := os.MkdirAll(d.AsPath(), os.ModeDir|0700); err != nil {
+		if err := os.MkdirAll(d.ParentDir(), os.ModeDir|0700); err != nil {
 			u.Error(err)
 			return err
 		}
