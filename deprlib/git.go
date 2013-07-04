@@ -31,9 +31,16 @@ func (s *Git) CheckClean(d *Dep) error {
 func (s *Git) Clone(d *Dep) error {
 	if !d.exists {
 		// new, initial clone?
-		u.Warnf("cloning src? %s", d.AsDir())
-		cmdgit := exec.Command("git", "clone", d.As)
-		cmdgit.Dir = d.AsDir()
+		// git@github.com:lytics/cache.git
+		parts := strings.Split(d.Src, "/")
+		// 0: github.com  1:lytics   2:cache
+		if len(parts) < 2 {
+			return fmt.Errorf("Invalid src?  %s", d.Src)
+		}
+		gitPath := fmt.Sprintf("git@%s:%s/%s.git", parts[0], parts[1], parts[2])
+		u.Warnf("cloning src? %s", gitPath)
+		cmdgit := exec.Command("git", "clone", gitPath)
+		cmdgit.Dir = d.ParentDir()
 		out, err := cmdgit.Output()
 		u.Debug(out, err)
 		return err
@@ -44,9 +51,21 @@ func (s *Git) Clone(d *Dep) error {
 // Initial Pull
 func (s *Git) Pull(d *Dep) error {
 	var cmd *exec.Cmd
-	// if was new (!d.exists) then we did go get, and now need to checkout master
-	// or:   if has d.Hash and the hash is not a known branch (ie:  develop,master,gh-pages,etc)
-	if !d.exists || (len(d.Hash) > 0 && d.exists && !strings.Contains(BRANCHES, d.Hash)) {
+	if !d.exists {
+		// if was new (!d.exists) then we did go get, and now need to checkout master
+		// we are in detached head mode at the moment most likely, get onto a branch
+		cmd = exec.Command("git", "checkout", "master")
+		cmd.Dir = d.AsPath()
+		out, err := cmd.Output()
+		if err != nil {
+			u.Errorf("GIT PULL ERR out='%s'  err=%v  cmd=%v", out, err)
+			return err
+		}
+		u.Debugf("hash checkout master (hash=%v) path:%s  out='%s'", d.Hash, d.AsPath(), string(out))
+
+	} else if len(d.Hash) > 0 && d.exists && !strings.Contains(BRANCHES, d.Hash) {
+		// or:   if has d.Hash and the hash is not a known branch (ie:  develop,master,gh-pages,etc)
+
 		// we are in detached head mode at the moment most likely, get onto a branch
 		cmd = exec.Command("git", "checkout", "master")
 		cmd.Dir = d.AsPath()

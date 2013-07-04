@@ -6,6 +6,7 @@ import (
 	u "github.com/araddon/gou"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 	"sync"
 )
@@ -150,6 +151,21 @@ func (d *Dep) AsPath() string {
 	return fmt.Sprintf("%s/src/%s", GoPath, d.Src)
 }
 
+// The local disk path for the parent directory, for creation of git clone
+func (d *Dep) ParentDir() string {
+	src := d.Src
+	if len(d.As) > 0 {
+		src = d.As
+	}
+	base := path.Base(src)
+	basePath := src[:strings.LastIndex(src, "/")]
+	u.Info(base, " --- ", basePath)
+	if len(d.As) > 0 {
+		return fmt.Sprintf("%s/src/%s", GoPath, basePath)
+	}
+	return fmt.Sprintf("%s/src/%s", GoPath, basePath)
+}
+
 // The local disk directory, the path that will be used
 // for importing into go projects, may not be same as source path
 func (d *Dep) AsDir() string {
@@ -171,21 +187,12 @@ func (d *Dep) createPath() error {
 	fi, err := os.Stat(d.AsPath())
 	if err != nil && strings.Contains(err.Error(), "no such file or directory") {
 		d.exists = false
-		// u.Debugf("Creating dir %s", d.AsPath())
-		// if err := os.MkdirAll(d.AsPath(), os.ModeDir|0700); err != nil {
-		// 	u.Error(err)
-		// 	return err
-		// }
-		// return nil
-		// use Go Get?  Should we specify?  How do we do a go get -u?
-
-		cmd := exec.Command(GoCmdPath, "get", "-u", d.Src)
-		cmd.Dir = GoPath
-		out, err := cmd.Output()
-		if err != nil {
+		u.Debugf("Creating dir %s", d.ParentDir())
+		if err := os.MkdirAll(d.AsPath(), os.ModeDir|0700); err != nil {
+			u.Error(err)
 			return err
 		}
-		u.Debugf("%s get -u '%s'  out=%s", GoCmdPath, d.Src, string(out))
+		d.control.Clone(d)
 	}
 	if fi != nil && fi.IsDir() {
 		d.exists = true
