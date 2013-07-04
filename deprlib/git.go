@@ -20,9 +20,10 @@ func (s *Git) CheckClean(d *Dep) error {
 	cmd := exec.Command("git", "diff", "--exit-code")
 	cmd.Dir = d.AsPath()
 	out, err := cmd.Output()
-	if len(out) == 0 && err == nil {
+	if len(out) == 0 || err == nil {
 		return nil
 	}
+	u.Debugf("out? %v", string(out))
 	return fmt.Errorf("GIT NOT CLEAN: %s", d.AsPath())
 }
 
