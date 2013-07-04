@@ -6,7 +6,6 @@ import (
 	u "github.com/araddon/gou"
 	"os"
 	"os/exec"
-	"path"
 	"strings"
 	"sync"
 )
@@ -138,9 +137,7 @@ func (d *Dep) ParentDir() string {
 	if len(d.As) > 0 {
 		src = d.As
 	}
-	base := path.Base(src)
 	basePath := src[:strings.LastIndex(src, "/")]
-	u.Info(base, " --- ", basePath)
 	if len(d.As) > 0 {
 		return fmt.Sprintf("%s/src/%s", GoPath, basePath)
 	}

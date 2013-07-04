@@ -72,7 +72,7 @@ func (s *Git) Pull(d *Dep) error {
 		u.Errorf("GIT PULL ERR out='%s' %s err=%v  cmd=%v", out, d.AsPath(), err, cmd)
 		return err
 	}
-	u.Debugf("Git pull? %s   %s", d.AsPath(), chompnl(out))
+	//u.Debugf("Git pull? %s   %s", d.AsPath(), chompnl(out))
 	return nil
 
 }
@@ -89,7 +89,7 @@ func (s *Git) Checkout(d *Dep) error {
 		u.Debugf("git checkout3 %s  as:%s", d.Branch, d.AsPath())
 		cmd = exec.Command("git", "checkout", d.Branch)
 	} else {
-		u.Debugf("git checkout4 master  as:%s", d.AsPath())
+		//u.Debugf("git checkout4 master  as:%s", d.AsPath())
 		cmd = exec.Command("git", "checkout", "master")
 	}
 
