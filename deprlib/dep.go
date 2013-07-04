@@ -178,12 +178,14 @@ func (d *Dep) createPath() error {
 		// }
 		// return nil
 		// use Go Get?  Should we specify?  How do we do a go get -u?
-		
-		out, err := exec.Command(GoCmdPath, "get", "-u", d.Src).Output()
+
+		cmd := exec.Command(GoCmdPath, "get", "-u", d.Src)
+		cmd.Dir = GoPath
+		out, err := cmd.Output()
 		if err != nil {
 			return err
 		}
-		u.Debugf("go get -u '%s'  out=%s", d.Src, string(out))
+		u.Debugf("%s get -u '%s'  out=%s", GoCmdPath, d.Src, string(out))
 	}
 	if fi != nil && fi.IsDir() {
 		d.exists = true
