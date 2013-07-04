@@ -42,7 +42,7 @@ func (s *Git) Clone(d *Dep) error {
 		cmdgit := exec.Command("git", "clone", gitPath)
 		cmdgit.Dir = d.ParentDir()
 		out, err := cmdgit.Output()
-		u.Debug(out, err)
+		u.Debug(string(out), err)
 		return err
 	}
 	return nil
@@ -81,7 +81,7 @@ func (s *Git) Pull(d *Dep) error {
 	cmd.Dir = d.AsPath()
 	out, err := cmd.Output()
 	if err != nil {
-		u.Errorf("GIT PULL ERR out='%s'  err=%v  cmd=%v", out, err, cmd)
+		u.Errorf("GIT PULL ERR out='%s' %s err=%v  cmd=%v", out, d.AsPath(), err, cmd)
 		return err
 	}
 	u.Debugf("Git pull? %s   %s", d.AsPath(), chompnl(out))
