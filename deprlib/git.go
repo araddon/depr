@@ -51,26 +51,14 @@ func (s *Git) Clone(d *Dep) error {
 // Initial Pull
 func (s *Git) Pull(d *Dep) error {
 	var cmd *exec.Cmd
-	if !d.exists {
-		// if was new (!d.exists) then we did go get, and now need to checkout master
-		// we are in detached head mode at the moment most likely, get onto a branch
-		cmd = exec.Command("git", "checkout", "master")
-		cmd.Dir = d.AsPath()
-		out, err := cmd.Output()
-		if err != nil {
-			u.Errorf("GIT PULL ERR out='%s'  err=%v  cmd=%v", out, err)
-			return err
-		}
-		u.Debugf("hash checkout master (hash=%v) path:%s  out='%s'", d.Hash, d.AsPath(), string(out))
-
-	} else if len(d.Hash) > 0 && d.exists && !strings.Contains(BRANCHES, d.Hash) {
+	if len(d.Hash) > 0 && d.exists && !strings.Contains(BRANCHES, d.Hash) {
 		// or:   if has d.Hash and the hash is not a known branch (ie:  develop,master,gh-pages,etc)
 
 		// we are in detached head mode at the moment most likely, get onto a branch
 		cmd = exec.Command("git", "checkout", "master")
 		cmd.Dir = d.AsPath()
 		out, err := cmd.Output()
-		if err != nil {
+		if err != nil && len(out) > 0 {
 			u.Errorf("GIT PULL ERR out='%s'  err=%v  cmd=%v", out, err)
 			return err
 		}
