@@ -23,11 +23,13 @@ func (s *GoGet) Clone(d *Dep) error {
 		cmd.Dir = GoPath
 		out, err := cmd.Output()
 		if err != nil {
-			//u.Debugf("%s get'%s' OUT='%s'", GoCmdPath, d.Src, string(out))
+			//u.Debugf("%s get '%s' OUT='%s'", GoCmdPath, d.Src, string(out))
 			if strings.Contains(string(out), "no Go source files") {
 				return nil
 			} else if len(out) == 0 {
 				return nil
+			} else {
+				u.Warnf("%s get '%s' OUT='%s'", GoCmdPath, d.Src, string(out))
 			}
 		}
 		return err
