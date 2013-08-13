@@ -63,6 +63,8 @@ func (s *Git) Pull(d *Dep) error {
 			return err
 		}
 		u.Debugf("hash checkout master (hash=%v) path:%s  out='%s'", d.Hash, d.AsPath(), string(out))
+	} else {
+		u.Debugf("on master, just pull: %s", d.AsPath())
 	}
 	//now do a git pull after ensuring we are on a branch?
 	cmd = exec.Command("git", "pull")
