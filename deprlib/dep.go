@@ -211,6 +211,7 @@ func (d *Dep) Buildr() {
 	cmd.Dir = d.AsPath()
 	out, err := cmd.Output()
 	cmd = exec.Command(GoCmdPath, "install")
+	cmd.Dir = d.AsPath()
 	out, err = cmd.Output()
 	if err != nil {
 		u.Errorf("Could not build: %s go cmd=%s err=`%v` out=`%s`", d.AsPath(), GoCmdPath, err, string(out))
