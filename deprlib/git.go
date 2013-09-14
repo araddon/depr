@@ -8,7 +8,8 @@ import (
 )
 
 var (
-	BRANCHES = "master,develop,gh-pages"
+	BRANCHES    = "master,develop,gh-pages"
+	BASE_BRANCH = "develop"
 )
 
 // Implementation of the git interface for managing checkouts
@@ -48,39 +49,12 @@ func (s *Git) Clone(d *Dep) error {
 	return nil
 }
 
-// Initial Pull
 func (s *Git) Pull(d *Dep) error {
-	var cmd *exec.Cmd
-	if len(d.Hash) > 0 && d.exists && !strings.Contains(BRANCHES, d.Hash) {
-		// or:   if has d.Hash and the hash is not a known branch (ie:  develop,master,gh-pages,etc)
-
-		// we are in detached head mode at the moment most likely, get onto a branch
-		cmd = exec.Command("git", "checkout", "master")
-		cmd.Dir = d.AsPath()
-		out, err := cmd.Output()
-		if err != nil && len(out) > 0 {
-			u.Errorf("GIT PULL ERR out='%s'  err=%v  cmd=%v", out, err)
-			return err
-		}
-		u.Debugf("hash checkout master (hash=%v) path:%s  out='%s'", d.Hash, d.AsPath(), string(out))
-	} else {
-		u.Debugf("on master, just pull: %s", d.AsPath())
-	}
-	//now do a git pull after ensuring we are on a branch?
-	cmd = exec.Command("git", "pull")
-	cmd.Dir = d.AsPath()
-	out, err := cmd.Output()
-	if err != nil && len(out) > 0 {
-		u.Errorf("GIT PULL ERR out='%s' %s err=%v  cmd=%v", out, d.AsPath(), err, cmd)
-		return err
-	}
-	//u.Debugf("Git pull? %s   %s", d.AsPath(), chompnl(out))
+	// need to refactor order of these
 	return nil
-
 }
 
-// Checkout appropriate branch if any
-func (s *Git) Checkout(d *Dep) error {
+func (s *Git) getRightBranch(d *Dep) error {
 	var cmd *exec.Cmd
 
 	//git checkout hash
@@ -97,8 +71,56 @@ func (s *Git) Checkout(d *Dep) error {
 
 	cmd.Dir = d.AsPath()
 	out, err := cmd.Output()
-	if err != nil {
+	if err != nil && len(out) > 0 {
 		u.Errorf("out='%s'  err=%v  cmd=%v", out, err, cmd)
+		return err
+	}
+	return nil
+}
+
+func (s *Git) doPull(d *Dep) error {
+	var cmd *exec.Cmd
+
+	//now fetch or pull?
+	cmd = exec.Command("git", "pull")
+	cmd.Dir = d.AsPath()
+	out, err := cmd.Output()
+	if err != nil && len(out) > 0 {
+		u.Errorf("GIT PULL ERR out='%s' %s err=%v  cmd=%v", out, d.AsPath(), err, cmd)
+		if err := s.fixDetachedHead(d); err == nil {
+			return nil
+		}
+		return err
+	}
+	return nil
+}
+
+func (s *Git) fixDetachedHead(d *Dep) error {
+	// if has d.Hash and the hash is not a known branch (ie:  develop,master,gh-pages,etc)
+	if len(d.Hash) > 0 && d.exists && !strings.Contains(BRANCHES, d.Hash) {
+		// we are possibly in in detached head mode at the moment
+		// lets try checking out master and repeating, to onto a branch
+		cmd := exec.Command("git", "checkout", BASE_BRANCH)
+		cmd.Dir = d.AsPath()
+		out, err := cmd.Output()
+		if err != nil && len(out) > 0 {
+			u.Errorf("GIT PULL ERR out='%s'  err=%v  cmd=%v", out, err)
+			return err
+		}
+		u.Debugf("hash checkout %s (hash=%v) path:%s  out='%s'",
+			BASE_BRANCH, d.Hash, d.AsPath(), string(out))
+	} else {
+		u.Debugf("on master, just pull: %s", d.AsPath())
+	}
+	return nil
+}
+
+// Checkout appropriate branch if any
+func (s *Git) Checkout(d *Dep) error {
+	if err := s.getRightBranch(d); err != nil {
+		return err
+	}
+	if err := s.doPull(d); err != nil {
 		return err
 	}
 

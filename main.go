@@ -14,18 +14,21 @@ var (
 	config        string
 	goCmdPath     string
 	allowNonClean bool
+	baseBranch    string
 )
 
 func init() {
 	flag.StringVar(&config, "config", ".depr.yaml", "Yaml config file with dependencies to resolve")
 	flag.StringVar(&goCmdPath, "gopath", "/usr/local/go/bin/go", "Path to go binary")
 	flag.BoolVar(&allowNonClean, "no-clean", false, "Allow dirty branches?  (uncommited changes)")
+	flag.StringVar(&baseBranch, "basebranch", "develop", "Branch to use if none specified")
 }
 
 func main() {
 	flag.Parse()
 	u.SetupLogging("debug")
 	u.SetColorIfTerminal()
+	deprlib.BASE_BRANCH = baseBranch
 
 	yamlBytes, err := ioutil.ReadFile(config)
 	//Debug(string(yamlBytes))
