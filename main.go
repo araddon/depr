@@ -4,8 +4,8 @@ import (
 	"flag"
 	"github.com/araddon/depr/deprlib"
 	u "github.com/araddon/gou"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
-	"launchpad.net/goyaml"
 	"os"
 	"runtime"
 )
@@ -38,7 +38,7 @@ func main() {
 	deprlib.GoCmdPath = goCmdPath
 
 	var d deprlib.Dependencies
-	err = goyaml.Unmarshal(yamlBytes, &d)
+	err = yaml.Unmarshal(yamlBytes, &d)
 
 	err = d.Run(allowNonClean)
 	quitIfErr(err)
