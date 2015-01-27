@@ -1,0 +1,14 @@
+{
+	"ImportPath": "github.com/araddon/depr",
+	"GoVersion": "go1.3.1",
+	"Deps": [
+		{
+			"ImportPath": "github.com/araddon/gou",
+			"Rev": "d88ffbf6bbf42f05e3021ba707c3eb08c37126e8"
+		},
+		{
+			"ImportPath": "gopkg.in/yaml.v2",
+			"Rev": "5d6f7e02b7cdad63b06ab3877915532cd30073b4"
+		}
+	]
+}
