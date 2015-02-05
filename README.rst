@@ -46,6 +46,16 @@ Usage::
 
     depr --no-clean   # allow un-clean non-commited changes in depencies
 
+Dependencies of the dependency resolver::
+
+* These will need to be acquired using `go get` or using GoDeps because 'yo dawg...'
+
+	github.com/araddon/depr/deprlib
+	github.com/araddon/gou
+	gopkg.in/yaml.v2
+
+* Assuming you have godeps installed but are using depr: `godep restore`
+
 
 some other go packages for dependency
 -------------------------------------------
