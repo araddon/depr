@@ -1,3 +1,7 @@
+Dead Project
+---------------
+I wrote this early on before go dependency management had evolved much as a way that worked with our workflow, but is no longer used.  
+
 Go dependency resolution
 ------------------------------
 
